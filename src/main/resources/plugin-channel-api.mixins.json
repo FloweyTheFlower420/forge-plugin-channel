@@ -1,9 +1,11 @@
 {
   "required": true,
-  "package": "${project.group}.mixin",
+  "package": "com.floweytf.channels.mixins",
   "compatibilityLevel": "JAVA_8",
   "refmap": "${mod_id}.refmap.json",
-  "mixins": [],
+  "mixins": [
+    "ClientPacketListenerMixin"
+  ],
   "client": [],
   "minVersion": "0.8"
 }
