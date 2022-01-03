@@ -27,7 +27,7 @@ public class EventHandler implements ClientCustomPacketEvent {
     private final CommandDispatcher<String> dispatcher = new CommandDispatcher<>();
 
     public EventHandler() {
-        ClientChannelRegistry.getInstance().addListener(this);
+        ClientChannelRegistryImpl.getInstance().addListener(this);
         dispatcher.register(Commands.literal("#pluginchannels")
             .then(Commands.literal("dump")
                 .then(Commands.argument("format", EnumArgument.enumArgument(Modes.class))
@@ -63,7 +63,7 @@ public class EventHandler implements ClientCustomPacketEvent {
                                 String data = ctx.getArgument("buf", String.class);
                                 PacketBufByteWriter w = PacketBufByteWriter.getWriter();
                                 Utils.rethrow(() -> w.write(data));
-                                ClientChannelRegistry.sendPacketToServer(rl, w.getBacking());
+                                ClientChannelRegistry.getInstance().sendPacketToServer(rl, w.getBacking());
                                 sendMessageToPlayer("[Plugin channel API]: sent to " + rl + " buf: " + data);
                                 return 0;
                             })
@@ -77,7 +77,7 @@ public class EventHandler implements ClientCustomPacketEvent {
                         .executes((ctx) -> {
                             ResourceLocation id = ctx.getArgument("channel", ResourceLocation.class);
                             sendMessageToPlayer("[Plugin channel API]: registered " + id);
-                            ClientChannelRegistry.sendEnablePacket(id);
+                            ClientChannelRegistry.getInstance().sendEnablePacket(id);
                             return 0;
                         })
                     )
@@ -88,7 +88,7 @@ public class EventHandler implements ClientCustomPacketEvent {
 
     @SubscribeEvent
     public void onClientConnect(ClientPlayerNetworkEvent.LoggedInEvent e) {
-        ClientChannelRegistry.getInstance().sendEnablePackets();
+        ((ClientChannelRegistryImpl) ClientChannelRegistry.getInstance()).sendEnablePackets();
     }
 
     @SubscribeEvent

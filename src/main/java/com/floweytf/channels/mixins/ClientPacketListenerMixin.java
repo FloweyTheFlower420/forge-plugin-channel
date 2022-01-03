@@ -1,5 +1,6 @@
 package com.floweytf.channels.mixins;
 
+import com.floweytf.channels.ClientChannelRegistryImpl;
 import com.floweytf.channels.api.ClientChannelRegistry;
 import net.minecraft.client.network.play.ClientPlayNetHandler;
 import net.minecraft.network.play.server.SCustomPayloadPlayPacket;
@@ -15,7 +16,7 @@ public class ClientPacketListenerMixin {
         target = "Lnet/minecraft/network/play/server/SCustomPayloadPlayPacket;getIdentifier()Lnet/minecraft/util/ResourceLocation;"
     ), cancellable = true)
     void handleCustomPayload(SCustomPayloadPlayPacket packet, CallbackInfo ci) {
-        if(ClientChannelRegistry.getInstance().dispatchIfPresent(packet))
+        if(((ClientChannelRegistryImpl)ClientChannelRegistry.getInstance()).dispatchIfPresent(packet))
             ci.cancel();
     }
 }

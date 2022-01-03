@@ -11,6 +11,10 @@ buildscript {
         classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
     }
 }
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+}
+
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'org.spongepowered.mixin'
@@ -23,7 +27,17 @@ archivesBaseName = mod_id
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
-println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+sourceSets {
+    api
+    main {
+        compileClasspath += sourceSets.api.output
+        runtimeClasspath += sourceSets.api.output
+        resources {
+            srcDir 'src/generated/resources'
+        }
+    }
+}
+
 minecraft {
     mappings channel: mappings_channel, version: mappings_version
     runs {
@@ -56,6 +70,7 @@ minecraft {
             mods {
                 "${mod_id}" {
                     source sourceSets.main
+                    source sourceSets.api
                 }
             }
         }
@@ -70,12 +85,16 @@ minecraft {
             mods {
                 "${mod_id}" {
                     source sourceSets.main
+                    source sourceSets.api
                 }
             }
         }
     }
 }
-
+configurations {
+    apiImplementation.extendsFrom(implementation)
+    apiRuntimeOnly.extendsFrom(runtimeOnly)
+}
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
@@ -88,9 +107,13 @@ mixin {
     debug.export = true
 }
 
+configurations {
+    implementation.extendsFrom shadow
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation "com.floweytf.utils:utils:0.6.2"
+    shadow "com.floweytf.utils:utils:0.6.2"
 
     if (System.getProperty('idea.sync.active') != 'true') {
         annotationProcessor "org.spongepowered:mixin:${mixin_version}:processor"
@@ -125,6 +148,7 @@ processResources {
 }
 
 jar {
+    from sourceSets.api.output
     manifest {
         attributes([
                 'Specification-Title': mod_id,
@@ -138,7 +162,58 @@ jar {
     }
 }
 
-jar.finalizedBy('reobfJar')
+task sourcesJar(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.FAIL)
+    archiveClassifier.set('sources')
+    from sourceSets.main.allJava
+    from sourceSets.api.allJava
+}
+
+task apiJar(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.FAIL)
+    archiveClassifier.set('api')
+    from sourceSets.api.output
+    afterEvaluate { finalizedBy reobfApiJar }
+    from sourceSets.api.allJava
+}
+
+task deobfJar(type: Jar) {
+    duplicatesStrategy(DuplicatesStrategy.FAIL)
+    archiveClassifier.set('deobf')
+    from sourceSets.main.output
+    from sourceSets.api.output
+}
+
+artifacts {
+    archives apiJar
+    archives deobfJar
+}
+
+shadowJar {
+    archiveClassifier = ''
+    configurations = [project.configurations.shadow]
+    finalizedBy 'reobfShadowJar'
+    from './build/classes/java/api'
+}
+
+reobf {
+    shadowJar {}
+}
+
+afterEvaluate {
+    jar.finalizedBy reobfJar
+    reobfShadowJar.dependsOn shadowJar
+}
+
+reobf {
+    apiJar { classpath.from(sourceSets.api.compileClasspath) }
+    jar { classpath.from(sourceSets.main.compileClasspath) }
+}
+
+task reobf {
+    dependsOn reobfJar
+    dependsOn reobfApiJar
+}
 
 publishing {
     publications {

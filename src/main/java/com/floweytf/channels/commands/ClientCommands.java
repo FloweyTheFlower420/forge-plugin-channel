@@ -2,7 +2,6 @@ package com.floweytf.channels.commands;
 
 import com.floweytf.channels.PacketBufByteWriter;
 import com.floweytf.channels.api.ClientChannelRegistry;
-import com.floweytf.channels.commands.Commands;
 import com.floweytf.utils.Utils;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -17,8 +16,7 @@ public class ClientCommands {
                     String data = ctx.getArgument("buf", String.class);
                     PacketBufByteWriter w = PacketBufByteWriter.getWriter();
                     Utils.rethrow(() -> w.write(data));
-                    ClientChannelRegistry.sendPacketToServer(rl, w.getBacking());
-
+                    ClientChannelRegistry.getInstance().sendPacketToServer(rl, w.getBacking());
                     return 0;
                 }));
 }
