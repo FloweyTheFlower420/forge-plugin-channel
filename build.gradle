@@ -215,15 +215,24 @@ task reobf {
     dependsOn reobfApiJar
 }
 
+System.out.println("Running with " + flowey_maven_username + ", password: " + flowey_maven_password);
+
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            artifact jar
+        lib(MavenPublication) {
+            artifact apiJar
         }
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/mcmodsrepo"
+            url = 'https://maven.floweytf.com/releases/'
+            credentials {
+                username = flowey_maven_username
+                password = flowey_maven_password
+            }
+            authentication {
+                basic(BasicAuthentication)
+            }
         }
     }
 }
